@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Optional
+from typing import List, Optional
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -132,3 +132,27 @@ class ProductService:
         product = self._get_product_or_404(db, product_id)
         self._ensure_ownership(product, seller)
         self.product_repo.soft_delete(db, product=product)
+
+    def search_products(
+        self,
+        db: Session,
+        *,
+        query: str,
+        limit: int = 5,
+    ) -> List[Product]:
+        return self.product_repo.search_by_text(
+            db,
+            query=query or "",
+            limit=limit,
+        )
+
+    def get_product_for_context(
+        self,
+        db: Session,
+        *,
+        product_id: int,
+    ) -> Optional[Product]:
+        product = self.product_repo.get(db, product_id)
+        if not product or product.status == ProductStatus.DELETED:
+            return None
+        return product

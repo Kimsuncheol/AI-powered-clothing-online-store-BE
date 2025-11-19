@@ -13,3 +13,4 @@ from app.models.cart import Cart, CartItem  # noqa: F401
 from app.models.order import Order, OrderItem  # noqa: F401
 from app.models.payment import Payment  # noqa: F401
 from app.models.paypal_event import PayPalEvent  # noqa: F401
+from app.models.ai_conversation import AiConversation  # noqa: F401

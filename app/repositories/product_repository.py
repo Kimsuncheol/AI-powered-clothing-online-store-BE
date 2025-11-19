@@ -1,7 +1,7 @@
 from decimal import Decimal
 from typing import List, Optional, Tuple
 
-from sqlalchemy import asc, desc
+from sqlalchemy import asc, desc, or_
 from sqlalchemy.orm import Session
 
 from app.models.product import Product, ProductStatus
@@ -124,3 +124,25 @@ class ProductRepository:
         db.commit()
         db.refresh(product)
         return product
+
+    def search_by_text(
+        self,
+        db: Session,
+        *,
+        query: str,
+        limit: int = 5,
+    ) -> List[Product]:
+        pattern = f"%{query}%" if query else "%"
+        q = (
+            db.query(Product)
+            .filter(Product.status == ProductStatus.ACTIVE)
+            .filter(
+                or_(
+                    Product.name.ilike(pattern),
+                    Product.category.ilike(pattern),
+                )
+            )
+            .order_by(desc(Product.created_at))
+            .limit(limit)
+        )
+        return q.all()
