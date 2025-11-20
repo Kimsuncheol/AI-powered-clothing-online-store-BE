@@ -25,6 +25,16 @@ class ProductAvatarConfigSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class ProductAvatarConfigUpsert(BaseModel):
+    avatar_preset_id: int
+    style_params: Optional[Dict[str, Any]] = None
+
+
+class ProductAvatarConfigResponse(BaseModel):
+    avatar_preset_id: int
+    style_params: Optional[Dict[str, Any]] = None
+
+
 class ProductBase(BaseModel):
     name: str
     description: Optional[str] = None

@@ -1,6 +1,7 @@
 import enum
 
 from sqlalchemy import (
+    Boolean,
     Column,
     DateTime,
     Enum,
@@ -38,6 +39,12 @@ class Product(Base):
     variants = Column(JSON, nullable=True)
     stock = Column(Integer, nullable=False, default=0)
     status = Column(Enum(ProductStatus), nullable=False, default=ProductStatus.ACTIVE)
+
+    # Admin moderation fields
+    is_flagged = Column(Boolean, nullable=False, default=False)
+    flag_reason = Column(String(500), nullable=True)
+    is_hidden = Column(Boolean, nullable=False, default=False)
+
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
     updated_at = Column(
         DateTime,

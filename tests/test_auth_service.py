@@ -16,12 +16,13 @@ def test_signup_creates_user_and_hashes_password(auth_service, db_session):
     user, token = auth_service.signup(
         db_session,
         email="service_signup@example.com",
-        password="password123",
+        password="Password123!",
+        confirm_password="Password123!",
         role=UserRole.SELLER,
     )
 
     assert user.id is not None
-    assert user.password_hash != "password123"
+    assert user.password_hash != "Password123!"
     assert token
 
 
@@ -35,7 +36,32 @@ def test_signup_raises_when_email_exists(auth_service, db_session):
         auth_service.signup(
             db_session,
             email="duplicate_service@example.com",
-            password="password123",
+            password="Password123!",
+            confirm_password="Password123!",
+            role=UserRole.BUYER,
+        )
+    assert exc.value.status_code == status.HTTP_400_BAD_REQUEST
+
+
+def test_signup_raises_when_password_invalid(auth_service, db_session):
+    with pytest.raises(HTTPException) as exc:
+        auth_service.signup(
+            db_session,
+            email="weak_service@example.com",
+            password="weakpass",
+            confirm_password="weakpass",
+            role=UserRole.BUYER,
+        )
+    assert exc.value.status_code == status.HTTP_400_BAD_REQUEST
+
+
+def test_signup_raises_when_passwords_do_not_match(auth_service, db_session):
+    with pytest.raises(HTTPException) as exc:
+        auth_service.signup(
+            db_session,
+            email="mismatch_service@example.com",
+            password="Password123!",
+            confirm_password="Password123?",
             role=UserRole.BUYER,
         )
     assert exc.value.status_code == status.HTTP_400_BAD_REQUEST
@@ -45,13 +71,13 @@ def test_signin_returns_user_and_token(auth_service, db_session):
     create_user(
         db_session,
         email="service_signin@example.com",
-        password="password123",
+        password="Password123!",
     )
 
     user, token = auth_service.signin(
         db_session,
         email="service_signin@example.com",
-        password="password123",
+        password="Password123!",
     )
 
     assert user.email == "service_signin@example.com"
@@ -62,7 +88,7 @@ def test_signin_raises_on_bad_password(auth_service, db_session):
     create_user(
         db_session,
         email="service_badpass@example.com",
-        password="password123",
+        password="Password123!",
     )
 
     with pytest.raises(HTTPException) as exc:
@@ -79,7 +105,7 @@ def test_signin_raises_on_unknown_email(auth_service, db_session):
         auth_service.signin(
             db_session,
             email="unknown@example.com",
-            password="password123",
+            password="Password123!",
         )
     assert exc.value.status_code == status.HTTP_401_UNAUTHORIZED
 
@@ -88,7 +114,7 @@ def test_signin_raises_when_user_not_active(auth_service, db_session):
     create_user(
         db_session,
         email="inactive@example.com",
-        password="password123",
+        password="Password123!",
         status=UserStatus.BANNED,
     )
 
@@ -96,6 +122,6 @@ def test_signin_raises_when_user_not_active(auth_service, db_session):
         auth_service.signin(
             db_session,
             email="inactive@example.com",
-            password="password123",
+            password="Password123!",
         )
     assert exc.value.status_code == status.HTTP_403_FORBIDDEN

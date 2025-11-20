@@ -3,7 +3,8 @@ from typing import Any, Dict, List, Optional, Tuple
 from app.ai.tools.product_search_tool import Tool
 
 try:
-    from langchain.schema import AIMessage, HumanMessage, SystemMessage
+    # from langchain.schema import AIMessage, HumanMessage, SystemMessage
+    from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 except ImportError:  # pragma: no cover - fallback lightweight message classes
 
     class _BaseMessage:

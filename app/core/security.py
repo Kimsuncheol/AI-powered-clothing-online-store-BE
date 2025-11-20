@@ -15,6 +15,10 @@ from app.repositories.user_repository import UserRepository
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl=f"{settings.API_V1_PREFIX}/auth/signin",
 )
+oauth2_scheme_optional = OAuth2PasswordBearer(
+    tokenUrl=f"{settings.API_V1_PREFIX}/auth/signin",
+    auto_error=False,
+)
 user_repository = UserRepository()
 
 
@@ -74,6 +78,35 @@ def get_current_user(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User account is not active",
         )
+    return user
+
+
+def get_optional_user(
+    token: Optional[str] = Depends(oauth2_scheme_optional),
+    db: Session = Depends(get_db),
+) -> Optional[User]:
+    """
+    Same as get_current_user but returns None when token is missing/invalid,
+    allowing anonymous access.
+    """
+    if not token:
+        return None
+    try:
+        payload = jwt.decode(
+            token,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM],
+        )
+        user_id = payload.get("sub")
+    except JWTError:
+        return None
+
+    if user_id is None:
+        return None
+
+    user = user_repository.get_by_id(db, user_id=int(user_id))
+    if not user or user.status != UserStatus.ACTIVE:
+        return None
     return user
 
 

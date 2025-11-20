@@ -146,3 +146,12 @@ class ProductRepository:
             .limit(limit)
         )
         return q.all()
+
+    def fetch_product_names(self, db: Session, *, limit: int = 500) -> List[str]:
+        rows = (
+            db.query(Product.name)
+            .order_by(desc(Product.created_at))
+            .limit(limit)
+            .all()
+        )
+        return [row[0] for row in rows]

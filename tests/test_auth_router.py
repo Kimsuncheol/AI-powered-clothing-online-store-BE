@@ -8,7 +8,8 @@ from tests.conftest import create_user
 def test_signup_success_creates_user_and_returns_token(client, db_session):
     payload = {
         "email": "newuser@example.com",
-        "password": "supersecret",
+        "password": "Password123!",
+        "confirm_password": "Password123!",
         "role": UserRole.SELLER.value,
     }
 
@@ -28,7 +29,8 @@ def test_signup_fails_when_email_not_unique(client, db_session, create_buyer):
         "/api/v1/auth/signup",
         json={
             "email": "duplicate@example.com",
-            "password": "password123",
+            "password": "Password123!",
+            "confirm_password": "Password123!",
             "role": UserRole.BUYER.value,
         },
     )
@@ -41,7 +43,8 @@ def test_signup_role_defaults_to_buyer_when_not_provided(client):
         "/api/v1/auth/signup",
         json={
             "email": "nole@example.com",
-            "password": "password123",
+            "password": "Password123!",
+            "confirm_password": "Password123!",
         },
     )
 
@@ -49,12 +52,38 @@ def test_signup_role_defaults_to_buyer_when_not_provided(client):
     assert response.json()["user"]["role"] == UserRole.BUYER.value
 
 
+def test_signup_fails_when_password_weak(client):
+    response = client.post(
+        "/api/v1/auth/signup",
+        json={
+            "email": "weakpass@example.com",
+            "password": "weakpass",
+            "confirm_password": "weakpass",
+        },
+    )
+
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+def test_signup_fails_when_passwords_do_not_match(client):
+    response = client.post(
+        "/api/v1/auth/signup",
+        json={
+            "email": "mismatch@example.com",
+            "password": "Password123!",
+            "confirm_password": "Password321!",
+        },
+    )
+
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
 def test_signin_success_returns_token_and_user_info(client, create_buyer):
-    user = create_buyer(email="signin@example.com", password="password123")
+    user = create_buyer(email="signin@example.com", password="Password123!")
 
     response = client.post(
         "/api/v1/auth/signin",
-        json={"email": user.email, "password": "password123"},
+        json={"email": user.email, "password": "Password123!"},
     )
 
     assert response.status_code == status.HTTP_200_OK
@@ -64,7 +93,7 @@ def test_signin_success_returns_token_and_user_info(client, create_buyer):
 
 
 def test_signin_fails_with_wrong_password(client, create_buyer):
-    user = create_buyer(email="wrongpass@example.com", password="password123")
+    user = create_buyer(email="wrongpass@example.com", password="Password123!")
 
     response = client.post(
         "/api/v1/auth/signin",
@@ -77,7 +106,7 @@ def test_signin_fails_with_wrong_password(client, create_buyer):
 def test_signin_fails_for_nonexistent_email(client):
     response = client.post(
         "/api/v1/auth/signin",
-        json={"email": "missing@example.com", "password": "password123"},
+        json={"email": "missing@example.com", "password": "Password123!"},
     )
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
@@ -87,7 +116,7 @@ def test_signin_fails_if_user_banned_or_deactivated(client, db_session):
         user = create_user(
             db_session,
             email=f"{status_value.value}@example.com",
-            password="password123",
+            password="Password123!",
             role=UserRole.BUYER,
             status=status_value,
         )
@@ -95,7 +124,7 @@ def test_signin_fails_if_user_banned_or_deactivated(client, db_session):
             "/api/v1/auth/signin",
             json={
                 "email": user.email,
-                "password": "password123",
+                "password": "Password123!",
             },
         )
         assert response.status_code == status.HTTP_403_FORBIDDEN

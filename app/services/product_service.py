@@ -1,10 +1,11 @@
 from decimal import Decimal
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.models.product import Product, ProductStatus
+from app.models.product_avatar_config import ProductAvatarConfig
 from app.models.user import User, UserRole
 from app.repositories.product_repository import ProductRepository
 from app.schemas.product import (
@@ -156,3 +157,51 @@ class ProductService:
         if not product or product.status == ProductStatus.DELETED:
             return None
         return product
+
+    def get_product_avatar_config(
+        self,
+        db: Session,
+        *,
+        product_id: int,
+        seller: User,
+    ) -> Optional[ProductAvatarConfig]:
+        self._ensure_seller_permissions(seller)
+        product = self._get_product_or_404(db, product_id)
+        self._ensure_ownership(product, seller)
+        return (
+            db.query(ProductAvatarConfig)
+            .filter(ProductAvatarConfig.product_id == product.id)
+            .first()
+        )
+
+    def upsert_product_avatar_config(
+        self,
+        db: Session,
+        *,
+        product_id: int,
+        seller: User,
+        avatar_preset_id: int,
+        style_params: Optional[Dict[str, Any]],
+    ) -> ProductAvatarConfig:
+        self._ensure_seller_permissions(seller)
+        product = self._get_product_or_404(db, product_id)
+        self._ensure_ownership(product, seller)
+
+        config = (
+            db.query(ProductAvatarConfig)
+            .filter(ProductAvatarConfig.product_id == product.id)
+            .first()
+        )
+        if config:
+            config.avatar_preset_id = avatar_preset_id
+            config.style_params = style_params
+        else:
+            config = ProductAvatarConfig(
+                product_id=product.id,
+                avatar_preset_id=avatar_preset_id,
+                style_params=style_params,
+            )
+            db.add(config)
+        db.commit()
+        db.refresh(config)
+        return config

@@ -65,7 +65,7 @@ def create_user(
     db: Session,
     *,
     email: str,
-    password: str = "password123",
+    password: str = "Password123!",
     role: UserRole = UserRole.BUYER,
     status: UserStatus = UserStatus.ACTIVE,
 ) -> User:
@@ -83,7 +83,9 @@ def create_user(
 
 @pytest.fixture()
 def create_admin(db_session: Session):
-    def _create_admin(email: str = "admin@example.com", password: str = "password123"):
+    def _create_admin(
+        email: str = "admin@example.com", password: str = "Password123!"
+    ):
         return create_user(
             db_session,
             email=email,
@@ -96,7 +98,9 @@ def create_admin(db_session: Session):
 
 @pytest.fixture()
 def create_buyer(db_session: Session):
-    def _create_buyer(email: str = "buyer@example.com", password: str = "password123"):
+    def _create_buyer(
+        email: str = "buyer@example.com", password: str = "Password123!"
+    ):
         return create_user(
             db_session,
             email=email,
@@ -110,7 +114,7 @@ def create_buyer(db_session: Session):
 @pytest.fixture()
 def create_seller(db_session: Session):
     def _create_seller(
-        email: str = "seller@example.com", password: str = "password123"
+        email: str = "seller@example.com", password: str = "Password123!"
     ):
         return create_user(
             db_session,

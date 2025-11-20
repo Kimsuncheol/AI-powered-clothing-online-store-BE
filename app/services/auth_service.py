@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.security import create_access_token, get_password_hash, verify_password
 from app.models.user import User, UserRole, UserStatus
 from app.repositories.user_repository import UserRepository
+from app.schemas.auth import validate_password_strength
 
 
 class AuthService:
@@ -18,13 +19,28 @@ class AuthService:
         *,
         email: str,
         password: str,
+        confirm_password: str | None = None,
         role: UserRole = UserRole.BUYER,
     ) -> Tuple[User, str]:
         existing_user = self.user_repo.get_by_email(db, email=email)
         if existing_user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email is already registered",
+                detail="Email already in use.",
+            )
+
+        if confirm_password is not None and password != confirm_password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Password does not meet security requirements or does not match confirmation.",
+            )
+
+        try:
+            validate_password_strength(password)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Password does not meet security requirements or does not match confirmation.",
             )
 
         password_hash = get_password_hash(password)

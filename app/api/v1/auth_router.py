@@ -5,12 +5,7 @@ from app.core.security import get_current_user
 from app.db.session import get_db
 from app.dependencies import get_auth_service
 from app.models.user import User, UserRole
-from app.schemas.auth import (
-    AuthResponse,
-    AuthUser,
-    SignInRequest,
-    SignUpRequest,
-)
+from app.schemas.auth import AuthResponse, AuthUser, SignInRequest, SignUpIn
 from app.services.auth_service import AuthService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -22,7 +17,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
     status_code=status.HTTP_201_CREATED,
 )
 def signup(
-    payload: SignUpRequest,
+    payload: SignUpIn,
     db: Session = Depends(get_db),
     auth_service: AuthService = Depends(get_auth_service),
 ) -> AuthResponse:
@@ -30,6 +25,7 @@ def signup(
         db,
         email=payload.email,
         password=payload.password,
+        confirm_password=payload.confirm_password,
         role=payload.role or UserRole.BUYER,
     )
     return AuthResponse(user=user, access_token=token)
